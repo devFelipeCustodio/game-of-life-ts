@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-    base: 'game-of-life-tsgit',
+    base: 'game-of-life-ts',
 });
