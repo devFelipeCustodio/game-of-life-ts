@@ -1,0 +1,13 @@
+html {
+    overflow: hidden;
+}
+
+#app {
+    display: grid;
+    grid-template-columns: max(10%, 250px) auto;
+}
+
+#grid > canvas {
+    border-right: 1px solid rgba(0, 0, 0, 0.4);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.4);
+}
