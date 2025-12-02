@@ -2,7 +2,8 @@ import { Game, GameStatesEnum } from './game';
 import { GameEventsEnum } from './gameEventsManager';
 import { Coordinates } from './grid';
 
-const canvasContainer = document.querySelector('#canvasContainer');
+const canvasContainer =
+  document.querySelector<HTMLDivElement>('#canvasContainer');
 if (!canvasContainer) throw Error();
 
 const bgCanvas = document.querySelector<HTMLCanvasElement>('#bgCanvas');
@@ -29,13 +30,29 @@ if (
 
 const canvasClientRect = canvasContainer.getBoundingClientRect();
 
-bgCanvas.width = canvasClientRect.width;
-bgCanvas.height =
-  document.body.getBoundingClientRect().bottom - canvasClientRect.top;
+const GRID_MARGIN_X = 3;
+const GRID_MARGIN_Y = 1;
+const CELL_SIZE = 20;
 
-gameCanvas.width = canvasClientRect.width;
-gameCanvas.height =
-  document.body.getBoundingClientRect().bottom - canvasClientRect.top;
+const canvasWidth =
+  Math.floor(canvasClientRect.width / CELL_SIZE) * CELL_SIZE -
+  CELL_SIZE * GRID_MARGIN_X;
+const canvasHeight =
+  Math.floor(canvasClientRect.height / CELL_SIZE) * CELL_SIZE -
+  CELL_SIZE * GRID_MARGIN_Y;
+
+bgCanvas.width = canvasWidth;
+bgCanvas.height = canvasHeight;
+gameCanvas.width = canvasWidth;
+gameCanvas.height = canvasHeight;
+
+const canvasMarginInline = (canvasClientRect.width - canvasWidth) / 2;
+const canvasMarginBlock = (canvasClientRect.height - canvasHeight) / 2;
+
+bgCanvas.style.marginInline = canvasMarginInline + 'px';
+bgCanvas.style.marginBlock = canvasMarginBlock + 'px';
+gameCanvas.style.marginInline = canvasMarginInline + 'px';
+gameCanvas.style.marginBlock = canvasMarginBlock + 'px';
 
 const bgCtx = bgCanvas.getContext('2d');
 const gameCtx = gameCanvas.getContext('2d');
@@ -43,8 +60,8 @@ const gameCtx = gameCanvas.getContext('2d');
 if (!bgCtx || !gameCtx) throw Error();
 
 const gridDimensions = {
-  height: Math.floor(bgCanvas.clientHeight / 20),
-  width: Math.floor(bgCanvas.clientWidth / 20),
+  height: Math.floor(bgCanvas.clientHeight / CELL_SIZE),
+  width: Math.floor(bgCanvas.clientWidth / CELL_SIZE),
 };
 
 const game = new Game({
@@ -56,20 +73,27 @@ const game = new Game({
 for (let y = 0; y < gridDimensions.height; y++) {
   for (let x = 0; x < gridDimensions.width; x++) {
     bgCtx.strokeStyle = '#dee2e610';
-    bgCtx.strokeRect(x * 20, y * 20, 20, 20);
+    bgCtx.strokeRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
   }
 }
 
 gameCanvas.addEventListener('click', (event) => {
   const rect = gameCanvas.getBoundingClientRect();
 
-  const y = Math.floor((event.clientY - rect.top) / 20);
-  const x = Math.floor((event.clientX - rect.left) / 20);
+  console.log(rect);
+
+  const y = Math.floor((event.clientY - rect.top) / CELL_SIZE);
+  const x = Math.floor((event.clientX - rect.left) / CELL_SIZE);
 
   game.eventManager?.emitCellToggled({
     y,
     x,
   });
+});
+
+window.addEventListener('resize', (event) => {
+  console.log('resize');
+  console.log(event);
 });
 
 btnToggleRun.addEventListener('click', (event) => {
@@ -93,7 +117,7 @@ btnPrev.addEventListener('click', () => game.previousGrid());
 game.eventManager?.on(GameEventsEnum.GRID_RESETED, () => {
   for (let y = 0; y < gridDimensions.height; y++) {
     for (let x = 0; x < gridDimensions.width; x++) {
-      gameCtx.clearRect(x * 20, y * 20, 20, 20);
+      gameCtx.clearRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
     }
   }
   btnToggleRun.setAttribute('disabled', 'true');
@@ -163,13 +187,23 @@ game.eventManager?.on(
   GameEventsEnum.CELL_BORN,
   (event: CustomEvent<Coordinates>) => {
     gameCtx.fillStyle = '#0d6efd';
-    gameCtx.fillRect(event.detail.x * 20, event.detail.y * 20, 20, 20);
+    gameCtx.fillRect(
+      event.detail.x * CELL_SIZE,
+      event.detail.y * CELL_SIZE,
+      CELL_SIZE,
+      CELL_SIZE
+    );
   }
 );
 
 game.eventManager?.on(
   GameEventsEnum.CELL_KILLED,
   (event: CustomEvent<Coordinates>) => {
-    gameCtx.clearRect(event.detail.x * 20, event.detail.y * 20, 20, 20);
+    gameCtx.clearRect(
+      event.detail.x * CELL_SIZE,
+      event.detail.y * CELL_SIZE,
+      CELL_SIZE,
+      CELL_SIZE
+    );
   }
 );
