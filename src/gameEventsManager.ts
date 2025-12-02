@@ -1,14 +1,17 @@
-import { Coordinates, Grid } from "./game";
+import { GameStates } from './game';
+import { Coordinates, Grid } from './grid';
 
 export const GameEventsEnum = {
-  GAME_STARTED: 'gameOfLife_gameStarted',
+  GAME_STATE_CHANGED: 'gameOfLife_gameStateChanged',
   GRID_CREATED: 'gameOfLife_gridCreated',
   GRID_UPDATED: 'gameOfLife_gridUpdated',
+  GRID_RESETED: 'gameOfLife_gridReseted',
   CELL_BORN: 'gameOfLife_cellBorn',
+  CELL_TOGGLED: 'gameOfLife_cellToggled',
   CELL_KILLED: 'gameOfLife_cellKilled',
 } as const;
 
-type GameEvents =
+export type GameEvents =
   | (typeof GameEventsEnum)[keyof typeof GameEventsEnum]
   | 'resize';
 
@@ -33,9 +36,23 @@ export class GameEventManager {
     window.dispatchEvent(event);
   }
 
-  emitGameStarted(grid: Grid) {
-    const event = new CustomEvent(GameEventsEnum.GAME_STARTED, {
+  emitGridReseted(grid: Grid) {
+    const event = new CustomEvent(GameEventsEnum.GRID_RESETED, {
       detail: grid,
+    });
+    window.dispatchEvent(event);
+  }
+
+  emitGameStateChanged(state: GameStates) {
+    const event = new CustomEvent(GameEventsEnum.GAME_STATE_CHANGED, {
+      detail: state,
+    });
+    window.dispatchEvent(event);
+  }
+
+  emitCellToggled(coordinates: Coordinates) {
+    const event = new CustomEvent(GameEventsEnum.CELL_TOGGLED, {
+      detail: coordinates,
     });
     window.dispatchEvent(event);
   }

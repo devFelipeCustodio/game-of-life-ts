@@ -1,11 +1,16 @@
 import { Grid } from './grid';
 
+type GridHistoryEntry = {
+  grid: Grid;
+  population: number;
+};
+
 export class GridHistory {
-  private stack: Grid[] = [];
+  private stack: GridHistoryEntry[] = [];
   private length = 0;
 
-  push(grid: Grid) {
-    this.stack.push(grid);
+  push(entry: GridHistoryEntry) {
+    this.stack.push(entry);
     this.length++;
   }
 
@@ -20,6 +25,7 @@ export class GridHistory {
   pop() {
     const last = this.stack.pop();
     if (!last) throw Error('history stack is empty');
+    this.length--;
     return last;
   }
 

@@ -20,7 +20,7 @@ export class Grid {
   private dimensions: GridDimensions;
 
   constructor({ height, width }: GridDimensions) {
-    this.matrix = Array.from({ length: height }, () => new Uint8Array(height));
+    this.matrix = Array.from({ length: height }, () => new Uint8Array(width));
     this.dimensions = { height, width };
   }
 

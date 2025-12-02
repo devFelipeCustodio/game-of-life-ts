@@ -8,9 +8,50 @@
 		<title>Game of Life</title>
 	</head>
 
-	<body>
-		<div id="app"></div>
+	<body style="height:99dvh !important" class="overflow-hidden">
+		<div id="app">
+			<div class="shadow d-flex justify-content-center bg-secondary-subtle rounded-5 rounded-top-0">
+				<div id="controlPanel" class="d-flex flex-row justify-content-center text-center p-4">
+					<div class="d-flex flex-row gap-2 mx-2">
+						<div class="col d-flex flex-column gap-2">
+							<span class="fs-4">Automático</span>
+							<div class="d-flex gap-2">
+								<button id="btnToggleRun" disabled type="button" class="btn btn-primary col">Iniciar</button>
+							</div>
+							<label>Velocidade
+								<input type="range" id="speedSlider" step="1" min="1" max="10" disabled></label>
+						</div>
+						<div class="vr mx-3"></div>
+						<div class="col d-flex flex-column gap-2">
+							<span class="fs-4">Manual</span>
+							<div class="d-flex flex-column gap-2">
+								<div class="d-flex flex-row gap-2">
+									<button id="btnPrev" type="button" class="btn btn-primary col" disabled>Anterior</button>
+									<button id="btnNext" type="button" class="btn btn-primary col" disabled>Próximo</button>
+								</div>
+								<button id="btnClear" type="button" class="btn btn-primary" disabled>Limpar</button>
+							</div>
+						</div>
+					</div>
+					<div class="vr mx-3"></div>
+					<div class="d-flex flex-column gap-2">
+						<div class="d-flex flex-column align-items-center gap-1">
+							<span class="fs-4">Geração</span>
+							<span id="genCount" class="fs-5">1</span>
+						</div>
+						<div class="d-flex flex-column align-items-center gap-1">
+							<span class="fs-4">População</span>
+							<span id="populationCount" class="fs-5">0</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="h-100 m-4" id="canvasContainer">
+				<canvas style="position: absolute" id="bgCanvas"></canvas>
+				<canvas style="position: absolute" id="gameCanvas"></canvas>
+			</div>
+		</div>
 		<script type="module" src="/src/main.ts"></script>
 	</body>
-
-</html>
+</html></body></html></body></html>

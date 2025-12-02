@@ -6,46 +6,105 @@ type GameOptions = {
   grid: GridDimensions | Grid;
   gridHistory?: GridHistory;
   events?: boolean | GameEventManager;
+  delay?: number;
 };
 
+export const GameStatesEnum = {
+  GAME_IDLE: 'gameOfLife_gameIdle',
+  GAME_READY: 'gameOfLife_gameReady',
+  GAME_RUNNING: 'gameOfLife_gameRunning',
+  GAME_ENDED: 'gameOfLife_gameEnded',
+} as const;
+
+export type GameStates = (typeof GameStatesEnum)[keyof typeof GameStatesEnum];
+
 export class Game {
-  private running = false;
+  eventManager: GameEventManager | undefined;
+  private state: GameStates = GameStatesEnum.GAME_IDLE;
+  private latestOpts: GameOptions;
   private grid: Grid;
-  private events: GameEventManager | undefined;
   private gridHistory: GridHistory;
+  private delay: number;
   private cursor: Coordinates = { y: 0, x: 0 };
+  private population = 0;
 
   constructor(opts: GameOptions) {
+    this.latestOpts = opts;
+    this.delay = (opts.delay || 1000) * 100;
     if (opts.grid instanceof Grid) this.grid = opts.grid;
     else
       this.grid = new Grid({
         height: opts.grid.height,
         width: opts.grid.width,
       });
-    if (opts.events) this.events = new GameEventManager();
+    if (opts.events) this.eventManager = new GameEventManager();
     if (!opts.gridHistory) this.gridHistory = new GridHistory();
     else this.gridHistory = opts.gridHistory;
   }
 
+  getGrid() {
+    return this.grid;
+  }
+
+  getState() {
+    return this.state;
+  }
+
+  setState(state: GameStates) {
+    switch (state) {
+      case GameStatesEnum.GAME_IDLE:
+        this.state = GameStatesEnum.GAME_IDLE;
+        break;
+      case GameStatesEnum.GAME_READY:
+        this.state = GameStatesEnum.GAME_READY;
+        break;
+      case GameStatesEnum.GAME_RUNNING:
+        this.state = GameStatesEnum.GAME_RUNNING;
+        break;
+      case GameStatesEnum.GAME_ENDED:
+        this.state = GameStatesEnum.GAME_ENDED;
+        break;
+    }
+    this.eventManager?.emitGameStateChanged(state);
+  }
+
+  getHistoryLength() {
+    return this.gridHistory.getLength();
+  }
+
   toggleCell(coords: Coordinates) {
     const isAlive = this.grid.toggleAt(coords);
-    if (isAlive) this.events?.emitCellBorn(coords);
-    else this.events?.emitCellKilled(coords);
+
+    if (isAlive) {
+      this.eventManager?.emitCellBorn(coords);
+      this.population++;
+    } else {
+      this.eventManager?.emitCellKilled(coords);
+      this.population--;
+    }
+    if (this.population > 0) this.setState(GameStatesEnum.GAME_READY);
+    else this.setState(GameStatesEnum.GAME_IDLE);
   }
 
-  private enlivenCell() {
-    this.grid.enableAt(this.cursor);
-    this.events?.emitCellBorn(this.cursor);
+  private enlivenCell(coords?: Coordinates, skipPopulationUpdate = false) {
+    this.grid.enableAt(coords ?? this.cursor);
+    this.eventManager?.emitCellBorn(coords ?? this.cursor);
+    if (!skipPopulationUpdate) this.population++;
   }
 
-  private killCell() {
-    this.grid.disableAt(this.cursor);
-    this.events?.emitCellKilled(this.cursor);
+  private killCell(coords?: Coordinates, skipPopulationUpdate = false) {
+    this.grid.disableAt(coords ?? this.cursor);
+    this.eventManager?.emitCellKilled(coords ?? this.cursor);
+    if (!skipPopulationUpdate) this.population--;
+  }
+
+  getPopulation() {
+    return this.population;
   }
 
   private getLastGenCellAt(coords: Coordinates) {
-    const lastGen = this.gridHistory.lookback();
-    return lastGen.getAtWithMetadata(coords);
+    const lastHistEntry = this.gridHistory.lookback();
+    return lastHistEntry.grid.getAtWithMetadata(coords);
   }
 
   private getLastGenCell() {
@@ -67,7 +126,10 @@ export class Game {
 
   private parseLastGeneration() {
     this.cursor = { y: 0, x: 0 };
-    this.gridHistory.push(this.cloneCurrentGridInstance());
+    this.gridHistory.push({
+      grid: this.cloneCurrentGridInstance(),
+      population: this.population,
+    });
     const dimensions = this.grid.getDimensions();
     let didChange = false;
     while (this.cursor.y < dimensions.height) {
@@ -91,25 +153,75 @@ export class Game {
       this.cursor.y++;
     }
     if (didChange)
-      this.events?.emitGridUpdated(this.cloneCurrentGridInstance());
+      this.eventManager?.emitGridUpdated(this.cloneCurrentGridInstance());
     didChange = false;
   }
 
   private generationDidNotChange() {
-    return this.grid.isEqual(this.gridHistory.lookback());
+    return this.grid.isEqual(this.gridHistory.lookback().grid);
   }
 
-  toggleRun() {
-    if (!this.running) {
-      this.running = true;
-      this.events?.emitGameStarted(this.cloneCurrentGridInstance());
-      while (this.running) {
+  private async sleep(t: number) {
+    return await new Promise((resolve) => setTimeout(resolve, t));
+  }
+
+  async toggleRun() {
+    if (this.getState() !== GameStatesEnum.GAME_RUNNING) {
+      this.setState(GameStatesEnum.GAME_RUNNING);
+      while (this.getState() === GameStatesEnum.GAME_RUNNING) {
+        if (this.gridHistory.getLength() && this.generationDidNotChange()) {
+          this.gridHistory.pop();
+          this.setState(GameStatesEnum.GAME_ENDED);
+          return;
+        }
         this.parseLastGeneration();
-        if (this.gridHistory.getLength() && this.generationDidNotChange())
-          this.running = false;
+        await this.sleep(this.delay);
       }
     } else {
-      this.running = false;
+      this.setState(GameStatesEnum.GAME_ENDED);
     }
+  }
+
+  changeDelay(n: number) {
+    this.delay = n * 100;
+  }
+
+  nextGrid() {
+    this.parseLastGeneration();
+    if (this.grid.isEqual(this.gridHistory.lookback().grid)) {
+      this.gridHistory.pop();
+      this.eventManager?.emitGameStateChanged(GameStatesEnum.GAME_ENDED);
+    }
+  }
+
+  previousGrid() {
+    if (this.getHistoryLength() < 1)
+      throw Error("there's no entries in grid history");
+    const lastHistEntry = this.gridHistory.pop();
+    const { width, height } = this.grid.getDimensions();
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        if (lastHistEntry.grid.getAtWithMetadata({ y, x }).value)
+          this.enlivenCell({ y, x }, true);
+        else this.killCell({ y, x }, true);
+      }
+    }
+    this.population = lastHistEntry.population;
+    this.eventManager?.emitGridUpdated(lastHistEntry.grid);
+    this.eventManager?.emitGameStateChanged(GameStatesEnum.GAME_READY);
+  }
+
+  reset() {
+    this.gridHistory = new GridHistory();
+    this.population = 0;
+    this.setState(GameStatesEnum.GAME_IDLE);
+    if (this.latestOpts.grid instanceof Grid) this.grid = this.latestOpts.grid;
+    else
+      this.grid = new Grid({
+        height: this.latestOpts.grid.height,
+        width: this.latestOpts.grid.width,
+      });
+    if (this.latestOpts.events) this.eventManager = new GameEventManager();
+    this.eventManager?.emitGridReseted(this.grid);
   }
 }
