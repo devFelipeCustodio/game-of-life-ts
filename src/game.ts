@@ -177,7 +177,7 @@ export class Game {
         await this.sleep(this.delay);
       }
     } else {
-      this.setState(GameStatesEnum.GAME_ENDED);
+      this.setState(GameStatesEnum.GAME_READY);
     }
   }
 
