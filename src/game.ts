@@ -125,7 +125,7 @@ export class Game {
   }
 
   private parseLastGeneration() {
-    this.cursor = { y: 0, x: 0 };
+    this.resetCursor();
     this.gridHistory.push({
       grid: this.cloneCurrentGridInstance(),
       population: this.population,
@@ -197,6 +197,8 @@ export class Game {
   previousGrid() {
     if (this.getHistoryLength() < 1)
       throw Error("there's no entries in grid history");
+    this.resetCursor();
+    this.resetPopulation();
     const lastHistEntry = this.gridHistory.pop();
     const { width, height } = this.grid.getDimensions();
     for (let y = 0; y < height; y++) {
@@ -213,7 +215,7 @@ export class Game {
 
   reset() {
     this.gridHistory = new GridHistory();
-    this.population = 0;
+    this.resetPopulation();
     this.setState(GameStatesEnum.GAME_IDLE);
     if (this.latestOpts.grid instanceof Grid) this.grid = this.latestOpts.grid;
     else
@@ -229,5 +231,8 @@ export class Game {
   }
   resetCursor() {
     this.cursor = { y: 0, x: 0 };
+  }
+  resetPopulation() {
+    this.population = 0;
   }
 }
