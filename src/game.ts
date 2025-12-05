@@ -86,16 +86,16 @@ export class Game {
     else this.setState(GameStatesEnum.GAME_IDLE);
   }
 
-  private enlivenCell(coords?: Coordinates, skipPopulationUpdate = false) {
+  private enlivenCell(coords?: Coordinates) {
     this.grid.enableAt(coords ?? this.cursor);
     this.eventManager?.emitCellBorn(coords ?? this.cursor);
-    if (!skipPopulationUpdate) this.population++;
+    this.population++;
   }
 
-  private killCell(coords?: Coordinates, skipPopulationUpdate = false) {
+  private killCell(coords?: Coordinates) {
     this.grid.disableAt(coords ?? this.cursor);
     this.eventManager?.emitCellKilled(coords ?? this.cursor);
-    if (!skipPopulationUpdate) this.population--;
+    this.population--;
   }
 
   getPopulation() {
