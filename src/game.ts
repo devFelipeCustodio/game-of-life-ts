@@ -207,7 +207,7 @@ export class Game {
       }
     }
     this.population = lastHistEntry.population;
-    this.eventManager?.emitGridUpdated(lastHistEntry.grid);
+    this.eventManager?.emitGridUpdated();
     this.eventManager?.emitGameStateChanged(GameStatesEnum.GAME_READY);
   }
 
@@ -222,6 +222,12 @@ export class Game {
         width: this.latestOpts.grid.width,
       });
     if (this.latestOpts.events) this.eventManager = new GameEventManager();
-    this.eventManager?.emitGridReseted(this.grid);
+    this.eventManager?.emitGridReseted();
+  }
+  changeGridDimensions(dimensions: GridDimensions) {
+    this.grid.changeDimensions(dimensions);
+  }
+  resetCursor() {
+    this.cursor = { y: 0, x: 0 };
   }
 }
