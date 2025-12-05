@@ -24,6 +24,34 @@ export class Grid {
     this.dimensions = { height, width };
   }
 
+  changeDimensions(newDimensions: GridDimensions) {
+    let newMatrix = Array.from(this.matrix);
+    if (newDimensions.height !== this.dimensions.height) {
+      if (newDimensions.height < this.dimensions.height) {
+        newMatrix = newMatrix.slice(0, newDimensions.height);
+      } else {
+        while (newMatrix.length !== newDimensions.height) {
+          newMatrix.push(new Uint8Array(newDimensions.width));
+        }
+      }
+    }
+    if (newDimensions.width !== this.dimensions.width) {
+      if (newDimensions.width < this.dimensions.width) {
+        newMatrix = newMatrix.map((arr) => {
+          return arr.slice(0, newDimensions.width);
+        });
+      } else {
+        newMatrix = newMatrix.map((arr) => {
+          const newArr = Array.from(arr);
+          newArr.length = newDimensions.width;
+          return new Uint8Array(newArr);
+        });
+      }
+    }
+    this.matrix = newMatrix;
+    this.dimensions = newDimensions;
+  }
+
   toggleAt({ y, x }: Coordinates) {
     const block = this.getAt({ y, x });
     if (block === undefined) return;
