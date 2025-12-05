@@ -200,12 +200,15 @@ export class Game {
     this.resetPopulation();
     const lastHistEntry = this.gridHistory.pop();
     const { width, height } = this.grid.getDimensions();
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        if (lastHistEntry.grid.getAtWithMetadata({ y, x }).value)
-          this.enlivenCell({ y, x }, true);
-        else this.killCell({ y, x }, true);
+    while (this.cursor.y < height) {
+      while (this.cursor.x < width) {
+        if (lastHistEntry.grid.getAtWithMetadata(this.cursor).value)
+          this.enlivenCell(this.cursor);
+        else this.killCell(this.cursor);
+        this.cursor.x++;
       }
+      this.cursor.x = 0;
+      this.cursor.y++;
     }
     this.population = lastHistEntry.population;
     this.eventManager?.emitGridUpdated();
