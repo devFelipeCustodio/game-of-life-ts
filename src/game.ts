@@ -152,8 +152,7 @@ export class Game {
       this.cursor.x = 0;
       this.cursor.y++;
     }
-    if (didChange)
-      this.eventManager?.emitGridUpdated(this.cloneCurrentGridInstance());
+    if (didChange) this.eventManager?.emitGridUpdated();
     didChange = false;
   }
 
