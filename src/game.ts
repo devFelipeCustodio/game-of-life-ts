@@ -75,13 +75,13 @@ export class Game {
   toggleCell(coords: Coordinates) {
     const isAlive = this.grid.toggleAt(coords);
 
-    if (isAlive) {
+    if (isAlive === 1) {
       this.eventManager?.emitCellBorn(coords);
       this.population++;
-    } else {
+    } else if (isAlive === 0) {
       this.eventManager?.emitCellKilled(coords);
       this.population--;
-    }
+    } else throw Error('cell not found');
     if (this.population > 0) this.setState(GameStatesEnum.GAME_READY);
     else this.setState(GameStatesEnum.GAME_IDLE);
   }
