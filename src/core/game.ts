@@ -1,11 +1,11 @@
-import { GameEventManager } from './gameEventsManager';
+import { EventManager } from './eventManager';
 import { Coordinates, Grid, GridDimensions } from './grid';
 import { GridHistory } from './gridHistory';
 
 type GameOptions = {
   grid: GridDimensions | Grid;
   gridHistory?: GridHistory;
-  events?: boolean | GameEventManager;
+  events?: boolean | EventManager;
   delay?: number;
 };
 
@@ -14,12 +14,13 @@ export const GameStatesEnum = {
   GAME_READY: 'gameOfLife_gameReady',
   GAME_RUNNING: 'gameOfLife_gameRunning',
   GAME_ENDED: 'gameOfLife_gameEnded',
+  GAME_ENDED_WITH_POPULATION: 'gameOfLife_gameEndedWithPopulation',
 } as const;
 
 export type GameStates = (typeof GameStatesEnum)[keyof typeof GameStatesEnum];
 
 export class Game {
-  eventManager: GameEventManager | undefined;
+  eventManager: EventManager | undefined;
   private state: GameStates = GameStatesEnum.GAME_IDLE;
   private latestOpts: GameOptions;
   private grid: Grid;
@@ -37,7 +38,7 @@ export class Game {
         height: opts.grid.height,
         width: opts.grid.width,
       });
-    if (opts.events) this.eventManager = new GameEventManager();
+    if (opts.events) this.eventManager = new EventManager();
     if (!opts.gridHistory) this.gridHistory = new GridHistory();
     else this.gridHistory = opts.gridHistory;
   }
@@ -170,6 +171,10 @@ export class Game {
       while (this.getState() === GameStatesEnum.GAME_RUNNING) {
         if (this.gridHistory.getLength() && this.generationDidNotChange()) {
           this.gridHistory.pop();
+          if (this.getPopulation() > 0) {
+            this.setState(GameStatesEnum.GAME_ENDED_WITH_POPULATION);
+            return;
+          }
           this.setState(GameStatesEnum.GAME_ENDED);
           return;
         }
@@ -225,16 +230,34 @@ export class Game {
         height: this.latestOpts.grid.height,
         width: this.latestOpts.grid.width,
       });
-    if (this.latestOpts.events) this.eventManager = new GameEventManager();
+    if (this.latestOpts.events) this.eventManager = new EventManager();
     this.eventManager?.emitGridReseted();
   }
   changeGridDimensions(dimensions: GridDimensions) {
     this.grid.changeDimensions(dimensions);
+    const aliveCellsCount = this.getAliveCells().length;
+    this.population = aliveCellsCount;
+    if (aliveCellsCount < 1) this.setState(GameStatesEnum.GAME_IDLE);
   }
+
   resetCursor() {
     this.cursor = { y: 0, x: 0 };
   }
   resetPopulation() {
     this.population = 0;
+  }
+
+  getAliveCells() {
+    const { height, width } = this.grid.getDimensions();
+    const grid = this.getGrid();
+    const coordinates: Coordinates[] = [];
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        if (grid.getAtWithMetadata({ y, x }).value) {
+          coordinates.push({ y, x });
+        }
+      }
+    }
+    return coordinates;
   }
 }

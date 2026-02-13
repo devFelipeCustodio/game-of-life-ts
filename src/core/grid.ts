@@ -24,6 +24,10 @@ export class Grid {
     this.dimensions = { height, width };
   }
 
+  getMatrix() {
+    return this.matrix;
+  }
+
   changeDimensions(newDimensions: GridDimensions) {
     let newMatrix = Array.from(this.matrix);
     if (newDimensions.height !== this.dimensions.height) {

@@ -1,7 +1,7 @@
 import { GameStates } from './game';
 import { Coordinates } from './grid';
 
-export const GameEventsEnum = {
+export const EventsEnum = {
   GAME_STATE_CHANGED: 'gameOfLife_gameStateChanged',
   GRID_CREATED: 'gameOfLife_gridCreated',
   GRID_UPDATED: 'gameOfLife_gridUpdated',
@@ -12,18 +12,16 @@ export const GameEventsEnum = {
   CELL_KILLED: 'gameOfLife_cellKilled',
 } as const;
 
-export type GameEvents =
-  | (typeof GameEventsEnum)[keyof typeof GameEventsEnum]
-  | 'resize';
+export type Events = (typeof EventsEnum)[keyof typeof EventsEnum] | 'resize';
 
-export class GameEventManager {
-  private static instance: GameEventManager;
+export class EventManager {
+  private static instance: EventManager;
   constructor() {
-    if (GameEventManager.instance) return GameEventManager.instance;
-    GameEventManager.instance = this;
+    if (EventManager.instance) return EventManager.instance;
+    EventManager.instance = this;
   }
 
-  on(event: GameEvents | GameEvents[], cb: (event: CustomEvent) => unknown) {
+  on(event: Events | Events[], cb: (event: CustomEvent) => unknown) {
     if (typeof event === 'object') {
       return event.forEach((e) => this.on(e, cb));
     }
@@ -31,43 +29,43 @@ export class GameEventManager {
   }
 
   emitGridUpdated() {
-    const event = new CustomEvent(GameEventsEnum.GRID_UPDATED);
+    const event = new CustomEvent(EventsEnum.GRID_UPDATED);
     window.dispatchEvent(event);
   }
 
   emitGridReseted() {
-    const event = new CustomEvent(GameEventsEnum.GRID_RESETED);
+    const event = new CustomEvent(EventsEnum.GRID_RESETED);
     window.dispatchEvent(event);
   }
 
   emitGridResized() {
-    const event = new CustomEvent(GameEventsEnum.GRID_RESIZED);
+    const event = new CustomEvent(EventsEnum.GRID_RESIZED);
     window.dispatchEvent(event);
   }
 
   emitGameStateChanged(state: GameStates) {
-    const event = new CustomEvent(GameEventsEnum.GAME_STATE_CHANGED, {
+    const event = new CustomEvent(EventsEnum.GAME_STATE_CHANGED, {
       detail: state,
     });
     window.dispatchEvent(event);
   }
 
   emitCellToggled(coordinates: Coordinates) {
-    const event = new CustomEvent(GameEventsEnum.CELL_TOGGLED, {
+    const event = new CustomEvent(EventsEnum.CELL_TOGGLED, {
       detail: coordinates,
     });
     window.dispatchEvent(event);
   }
 
   emitCellBorn(coordinates: Coordinates) {
-    const event = new CustomEvent(GameEventsEnum.CELL_BORN, {
+    const event = new CustomEvent(EventsEnum.CELL_BORN, {
       detail: coordinates,
     });
     window.dispatchEvent(event);
   }
 
   emitCellKilled(coordinates: Coordinates) {
-    const event = new CustomEvent(GameEventsEnum.CELL_KILLED, {
+    const event = new CustomEvent(EventsEnum.CELL_KILLED, {
       detail: coordinates,
     });
     window.dispatchEvent(event);
