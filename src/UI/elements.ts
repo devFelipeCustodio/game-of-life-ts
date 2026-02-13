@@ -99,6 +99,7 @@ export class Elements {
       case GameStatesEnum.GAME_IDLE:
         this.btnClear.setAttribute('disabled', 'true');
         this.btnNext.setAttribute('disabled', 'true');
+        this.btnPrev.setAttribute('disabled', 'true');
         this.speedSlider.setAttribute('disabled', 'true');
         this.btnToggleRun.setAttribute('disabled', 'true');
         this.btnToggleRun.textContent = 'Iniciar';
