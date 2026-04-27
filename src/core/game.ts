@@ -161,14 +161,7 @@ export class Game {
     return this.grid.isEqual(this.gridHistory.lookback().grid);
   }
 
-  private async sleep(t: number) {
-    return await new Promise((resolve) => setTimeout(resolve, t));
-  }
-
-  async toggleRun() {
-    if (this.getState() !== GameStatesEnum.GAME_RUNNING) {
-      this.setState(GameStatesEnum.GAME_RUNNING);
-      while (this.getState() === GameStatesEnum.GAME_RUNNING) {
+  private step(): GameStates | null {
         if (this.gridHistory.getLength() && this.generationDidNotChange()) {
           this.gridHistory.pop();
           if (this.getPopulation() > 0) {
