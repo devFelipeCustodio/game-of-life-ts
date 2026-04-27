@@ -6,23 +6,15 @@ export function debounce<T extends (...args: unknown[]) => void>(
   wait: number,
   callback: T,
 ) {
-  let timeout: ReturnType<typeof setTimeout> | null;
+  let timeout: ReturnType<typeof setTimeout> | null = null;
 
-  return function <U>(this: U, ...args: Parameters<typeof callback>) {
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    const context = this;
-
-    if (typeof timeout === 'number') {
+  return function (this: unknown, ...args: Parameters<T>) {
+    if (timeout !== null) {
       clearTimeout(timeout);
     }
 
     timeout = setTimeout(() => {
-      timeout = null;
-      callback.apply(context, args);
+      callback.apply(this, args);
     }, wait);
-
-    if (!timeout) {
-      callback.apply(context, args);
-    }
   };
 }
