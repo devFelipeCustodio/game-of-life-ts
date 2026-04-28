@@ -1,3 +1,4 @@
+import { sleep } from '../util';
 import { EventManager } from './eventManager';
 import { Coordinates, Grid, GridDimensions } from './grid';
 import { GridHistory } from './gridHistory';
@@ -38,7 +39,11 @@ export class Game {
         height: opts.grid.height,
         width: opts.grid.width,
       });
-    if (opts.events) this.eventManager = new EventManager();
+    if (opts.events instanceof EventManager) {
+      this.eventManager = opts.events;
+    } else if (opts.events) {
+      this.eventManager = new EventManager();
+    }
     if (!opts.gridHistory) this.gridHistory = new GridHistory();
     else this.gridHistory = opts.gridHistory;
   }
@@ -51,7 +56,7 @@ export class Game {
     return this.state;
   }
 
-  setState(state: GameStates) {
+  private setState(state: GameStates) {
     switch (state) {
       case GameStatesEnum.GAME_IDLE:
         this.state = GameStatesEnum.GAME_IDLE;
@@ -64,6 +69,9 @@ export class Game {
         break;
       case GameStatesEnum.GAME_ENDED:
         this.state = GameStatesEnum.GAME_ENDED;
+        break;
+      case GameStatesEnum.GAME_ENDED_WITH_POPULATION:
+        this.state = GameStatesEnum.GAME_ENDED_WITH_POPULATION;
         break;
     }
     this.eventManager?.emitGameStateChanged(state);
@@ -162,21 +170,41 @@ export class Game {
   }
 
   private step(): GameStates | null {
-        if (this.gridHistory.getLength() && this.generationDidNotChange()) {
-          this.gridHistory.pop();
-          if (this.getPopulation() > 0) {
-            this.setState(GameStatesEnum.GAME_ENDED_WITH_POPULATION);
-            return;
-          }
-          this.setState(GameStatesEnum.GAME_ENDED);
-          return;
-        }
-        this.parseLastGeneration();
-        await this.sleep(this.delay);
+    if (this.gridHistory.getLength() && this.generationDidNotChange()) {
+      this.gridHistory.pop();
+
+      if (this.getPopulation() > 0) {
+        return GameStatesEnum.GAME_ENDED_WITH_POPULATION;
       }
-    } else {
-      this.setState(GameStatesEnum.GAME_READY);
+
+      return GameStatesEnum.GAME_ENDED;
     }
+
+    this.parseLastGeneration();
+    return null;
+  }
+
+  private async runLoop() {
+    while (this.getState() === GameStatesEnum.GAME_RUNNING) {
+      const result = this.step();
+
+      if (result !== null) {
+        this.setState(result);
+        return;
+      }
+
+      await sleep(this.delay);
+    }
+  }
+
+  async toggleRun() {
+    if (this.getState() === GameStatesEnum.GAME_RUNNING) {
+      this.setState(GameStatesEnum.GAME_READY);
+      return;
+    }
+
+    this.setState(GameStatesEnum.GAME_RUNNING);
+    await this.runLoop();
   }
 
   changeDelay(n: number) {
@@ -185,7 +213,7 @@ export class Game {
 
   nextGrid() {
     this.parseLastGeneration();
-    if (this.grid.isEqual(this.gridHistory.lookback().grid)) {
+    if (this.generationDidNotChange()) {
       this.gridHistory.pop();
       this.eventManager?.emitGameStateChanged(GameStatesEnum.GAME_ENDED);
     }
@@ -223,7 +251,6 @@ export class Game {
         height: this.latestOpts.grid.height,
         width: this.latestOpts.grid.width,
       });
-    if (this.latestOpts.events) this.eventManager = new EventManager();
     this.eventManager?.emitGridReseted();
   }
   changeGridDimensions(dimensions: GridDimensions) {
