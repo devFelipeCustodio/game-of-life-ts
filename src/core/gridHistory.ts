@@ -14,10 +14,6 @@ export class GridHistory {
     this.length++;
   }
 
-  clear() {
-    this.stack = [];
-  }
-
   lookback() {
     return this.stack[this.length - 1];
   }
